@@ -1,0 +1,72 @@
+{
+  "display_information": {
+    "name": "FlowDesk",
+    "description": "Your chief of staff — tracking commitments, answering questions, and briefing you on what matters.",
+    "background_color": "#1a1a2e",
+    "long_description": "FlowDesk is a Slack agent that watches, understands, and acts — without getting in the way. It monitors channels it's invited to and automatically detects commitments, lets you search workspace history with AI, summarizes channels on demand, and delivers personalized daily digests.\n\nFeatures:\n• Action Tracker — Detects commitments in real time\n• /ask — Natural language search over Slack history\n• /summary — Structured channel briefs\n• /mytasks — View and complete action items\n• Daily Digest — Personalized morning briefs"
+  },
+  "features": {
+    "app_home": {
+      "home_tab_enabled": false,
+      "messages_tab_enabled": true,
+      "messages_tab_read_only_enabled": false
+    },
+    "bot_user": {
+      "display_name": "FlowDesk",
+      "always_online": true
+    },
+    "slash_commands": [
+      {
+        "command": "/ask",
+        "description": "Search workspace history with AI",
+        "usage_hint": "[your question]",
+        "should_escape": false
+      },
+      {
+        "command": "/summary",
+        "description": "Get a structured summary of the current channel",
+        "should_escape": false
+      },
+      {
+        "command": "/mytasks",
+        "description": "View your open commitments and action items",
+        "should_escape": false
+      },
+      {
+        "command": "/flowhelp",
+        "description": "Show FlowDesk help and available commands",
+        "should_escape": false
+      }
+    ]
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "channels:history",
+        "channels:read",
+        "chat:write",
+        "commands",
+        "im:write",
+        "users:read",
+        "groups:history",
+        "groups:read",
+        "im:history",
+        "im:read"
+      ]
+    }
+  },
+  "settings": {
+    "event_subscriptions": {
+      "bot_events": [
+        "message.channels",
+        "message.groups"
+      ]
+    },
+    "interactivity": {
+      "is_enabled": true
+    },
+    "org_deploy_enabled": false,
+    "socket_mode_enabled": true,
+    "token_rotation_enabled": false
+  }
+}
