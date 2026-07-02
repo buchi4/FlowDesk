@@ -52,6 +52,7 @@ When extracting deadlines, interpret relative terms based on the current date/ti
 /**
  * Detect if a message contains an actionable commitment.
  * Returns structured data about the commitment.
+ * Uses Gemini's responseSchema for guaranteed valid JSON.
  */
 async function detectCommitment(messageText, context = {}) {
   const { userName, channelName, currentDate } = context;
@@ -64,39 +65,61 @@ Message: "${messageText}"
 
 Analyze this message. Is it a commitment?`;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: config.gemini.model,
-      contents: userPrompt,
-      config: {
-        systemInstruction: COMMITMENT_SYSTEM_PROMPT,
-        temperature: 0.1,
-        maxOutputTokens: 300,
-      },
-    });
+  const commitmentSchema = {
+    type: 'object',
+    properties: {
+      isCommitment: { type: 'boolean' },
+      confidence: { type: 'number' },
+      commitmentText: { type: 'string', nullable: true },
+      deadline: { type: 'string', nullable: true },
+      deadlineDescription: { type: 'string', nullable: true },
+    },
+    required: ['isCommitment', 'confidence'],
+  };
 
-    const text = response.text.trim();
+  // Try up to 2 times
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const response = await ai.models.generateContent({
+        model: config.gemini.model,
+        contents: userPrompt,
+        config: {
+          systemInstruction: COMMITMENT_SYSTEM_PROMPT,
+          temperature: 0.1,
+          maxOutputTokens: 500,
+          responseMimeType: 'application/json',
+          responseSchema: commitmentSchema,
+        },
+      });
 
-    // Parse JSON — handle potential markdown code fences
-    const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const result = JSON.parse(cleaned);
+      const text = response.text.trim();
+      console.log(`[Gemini] Raw response (attempt ${attempt}):`, text);
 
-    return {
-      isCommitment: result.isCommitment === true,
-      confidence: typeof result.confidence === 'number' ? result.confidence : 0,
-      commitmentText: result.commitmentText || null,
-      deadline: result.deadline || null,
-      deadlineDescription: result.deadlineDescription || null,
-    };
-  } catch (error) {
-    console.error('Gemini commitment detection error:', error.message);
-    return {
-      isCommitment: false,
-      confidence: 0,
-      commitmentText: null,
-      deadline: null,
-      deadlineDescription: null,
-    };
+      // Parse JSON — handle potential markdown code fences
+      const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const result = JSON.parse(cleaned);
+
+      return {
+        isCommitment: result.isCommitment === true,
+        confidence: typeof result.confidence === 'number' ? result.confidence : 0,
+        commitmentText: result.commitmentText || null,
+        deadline: result.deadline || null,
+        deadlineDescription: result.deadlineDescription || null,
+      };
+    } catch (error) {
+      console.error(`Gemini commitment detection error (attempt ${attempt}):`, error.message);
+      if (attempt === 2) {
+        return {
+          isCommitment: false,
+          confidence: 0,
+          commitmentText: null,
+          deadline: null,
+          deadlineDescription: null,
+        };
+      }
+      // Brief pause before retry
+      await new Promise(r => setTimeout(r, 500));
+    }
   }
 }
 

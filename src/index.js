@@ -4,6 +4,7 @@ const { registerMessageHandler } = require('./handlers/messageHandler');
 const { registerInteractionHandlers } = require('./handlers/interactionHandler');
 const { handleAskCommand } = require('./commands/ask');
 const { handleSummaryCommand } = require('./commands/summary');
+const { handleTestDigestCommand } = require('./commands/testdigest');
 const { startReminderJob } = require('./jobs/reminders');
 const { startDailyDigestJob } = require('./jobs/dailyDigest');
 
@@ -120,6 +121,13 @@ app.command('/flowhelp', async ({ ack, respond }) => {
     ],
     response_type: 'ephemeral',
   });
+});
+
+// Demo command for Devpost video
+app.command('/testdigest', async ({ command, ack, respond, logger }) => {
+  // We need to pass `app` down because runDailyDigest expects it.
+  const { handleTestDigestCommand } = require('./commands/testdigest');
+  await handleTestDigestCommand({ command, ack, respond, app, logger });
 });
 
 // ─── Start the App ──────────────────────────────────────────
